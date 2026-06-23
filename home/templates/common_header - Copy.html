@@ -1,0 +1,29 @@
+
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'style_common_header.css' %}">
+<!--div class="container"-->
+<header>
+<table width= 100%>
+
+	<tr> <td> <h1 class="paraspace"></h1></td></tr>
+	<tr> <td> <h1 class="paraspace"></h1></td></tr>
+   <tr>
+   <td>
+	 <h1>Md. Anisur Rahman</h1>
+    <p>DevSecOps Engineer | Cloud Engineer | Security | Automation | <a href="{% static 'anisur_rahman_cv.pdf' %}" class="btn" target="_blank" rel="noopener noreferrer">Download My CV</a></p>
+    <p>---------------------------------------------------------------------------------------------------------------------</p>
+	<p>
+	<a href="{% url 'overview' %}"><span class="text_btn">Overview</span></a>
+	<a href="{% url 'cert' %}"><span class="text_btn">Certificates</span></a>
+	<a href="{% url 'skills' %}"><span class="text_btn">Skills</span></a>
+	<a href="{% url 'projects' %}"><span class="text_btn">Projects</span></a>
+	<a href="{% url 'contact' %}"><span class="text_btn">Contact</span></a>
+	<a href="{% url 'about' %}"><span class="text_btn">About Me</span></a>
+	</p>			  
+	</td>
+	<td><img src="{% static 'photo.jpeg' %}" class="rounded-img"></td>   
+	</tr>
+</table>
+</header>
+ 

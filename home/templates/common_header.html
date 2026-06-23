@@ -1,0 +1,34 @@
+
+{% load static %}
+
+<header class="site-header">
+<div class="header-container">
+
+<div class="header-left">
+<h1 class="name">Md. Anisur Rahman</h1>
+
+<p class="title">
+DevSecOps Engineer | Cloud Engineer | Security | Automation |
+
+
+<a href="{% static 'anisur_rahman_cv.pdf' %}" class="btn" target="_blank">
+Download My CV
+</a>
+</p>
+<nav class="navbar">
+<a href="{% url 'overview' %}">Overview</a>
+<a href="{% url 'cert' %}">Certificates</a>
+<a href="{% url 'skills' %}">Skills</a>
+<a href="{% url 'projects' %}">Projects</a>
+<a href="{% url 'contact' %}">Contact</a>
+<a href="{% url 'about' %}">About Me</a>
+</nav>
+
+</div>
+
+<div class="header-right">
+<img src="{% static 'photo.jpeg' %}" class="rounded-img">
+</div>
+
+</div>
+</header>

@@ -1,0 +1,86 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Md. Anisur Rahman's Portfoliot Website</title>
+<link rel="stylesheet" href="{% static 'style_overview_header.css' %}">
+<link rel="stylesheet" href="{% static 'style4.css' %}">
+</head>
+<body>
+ <header>
+<table width= 100%>
+   <tr>
+   <td>
+	 <h1>Md. Anisur Rahman</h1>
+    <p>DevSecOps Engineer | Cloud Engineer | Security | Automation | CI/CD Pipeline | Monitoring | Containerization </a></p>
+    <p>---------------------------------------------------------------------------------------------------------------------</p>
+	<p>
+	<a href="{% url 'overview' %}"><span class="text_btn">Overview</span></a>
+	<a href="{% url 'cert' %}"><span class="text_btn">Certificates</span></a>
+	<a href="{% url 'skills' %}"><span class="text_btn">Skills</span></a>
+	<a href="{% url 'projects' %}"><span class="text_btn">Projects</span></a>
+	<a href="{% url 'contact' %}"><span class="text_btn">Contact</span></a>
+	<a href="{% url 'about' %}"><span class="text_btn">About Me</span></a>
+	</p>			  
+	</td>
+	<td><img src="{% static 'photo.jpeg' %}" class="rounded-img"></td>   
+	</tr>
+</table>
+</header>
+<section class="about">
+    <h1>About Me</h1>
+    <p>I am a results-driven DevSecOps Engineer and Cloud engineer to building secure, efficient, and scalable digital solutions.
+
+With hands-on experience in Linux systems, kubernetes, Docker, CI/CD pipelines, cloud platforms, and Django web development, I help turn ideas into production-ready systems.
+
+I focus on automation, performance optimization, infrastructure reliability, and secure deployments that support long-term growth.</p>
+ <p> <a href="{% url 'about' %}" class="btn">Know more About Me </Menu></a>|| <a href="{% static 'anisur_rahman_cv.pdf' %}" class="btn" target="_blank" rel="noopener noreferrer">Download My CV</a></p>    
+</section>
+
+ <section class="skills">
+    <h2>Skills</h2>
+    <div class="skill-list">
+        <div class="skill">Docker</div>
+        <div class="skill">Kubernetes</div>
+        <div class="skill">AWS</div>
+        <div class="skill">Terraform</div>
+        <div class="skill">Linux</div>
+        <div class="skill">Jenkins</div>
+    </div>
+</section>
+
+<section class="projects">
+    <h2>Projects</h2>
+    <div class="project-grid">
+        <div class="card">
+            <h3>CI/CD Pipeline</h3>
+            <p>Automated deployment with Jenkins + Docker.</p>
+        </div>
+
+        <div class="card">
+            <h3>Kubernetes Cluster</h3>
+            <p>Managed scalable microservices architecture.</p>
+        </div>
+
+        <div class="card">
+            <h3>Cloud Security</h3>
+            <p>Implemented IAM, monitoring and hardening.</p>
+        </div>
+    </div>
+</section>
+
+<section class="contact">
+    <h2>Contact</h2>
+    <p>Email: anisur81@@email.com</p>
+</section>
+
+<footer>
+    © 2026 Md. Anisur Rahman's DevSecOps Portfolio Website
+</footer>
+</body>
+</html>   
+ 
