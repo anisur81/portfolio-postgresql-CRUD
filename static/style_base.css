@@ -1,0 +1,42 @@
+
+/* style_base.css */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,body{
+    width:100%;
+    min-height:100%;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    background:#b6d1a9;
+    color:#21469b;
+    line-height:1.6;
+}
+
+main{
+    width:100%;
+    padding:35px 6%;
+}
+/*
+.section_gap{
+    margin-bottom:60px;
+    padding-bottom:60px;
+    border-bottom:1px solid #999;
+}
+*/
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:14px;
+    border:1px solid #ddd;
+    text-align:left;
+}

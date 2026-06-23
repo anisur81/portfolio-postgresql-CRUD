@@ -1,0 +1,255 @@
+*{
+    margin:0;
+    padding:0;
+	
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    background:rgb(48, 78, 27);
+    color:#3568d6;
+	margin:0;
+    padding:0;
+    width:100%;
+}
+
+/* Main Grid Layout */
+.container{
+    display:grid;
+    grid-template-areas:
+        "header header"
+        "about about"
+        "skills skills"
+        "projects projects"
+        "contact contact"
+        "footer footer";
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    padding:5px;
+    width:100%;
+    margin:0;
+	 
+}
+
+/* Common Section Design */
+section, header, footer{
+	width:100%;
+    background:white;
+    padding:60px 80px;
+    border-radius:0;
+    box-shadow:none;
+}
+
+/* Areas */
+header{
+    grid-area:header;
+}
+
+.hero{
+    grid-area:hero;
+    text-align:center;
+    padding:20px 40px;
+}
+
+.about{
+    grid-area:about;
+	margin-top:30px;
+	text-align:center;
+}
+
+.skills{
+    grid-area:skills;
+	margin-top:30px;
+}
+
+.projects{
+    /*grid-area:projects;*/
+	width:100%;
+	text-align:center;
+	margin-top:30px;
+}
+
+.contact{
+    /*grid-area:contact;*/
+    text-align:center;
+	margin-top:30px;
+}
+
+footer{
+    /*grid-area:footer; */
+    text-align:center;
+	margin-top:30px;
+}
+
+/* Text */
+h1{
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+h2{
+    margin-bottom:15px;
+    color:#3b82f6;
+}
+
+p{
+    color:#4b5563;
+    line-height:1.6;
+}
+
+/* Skills Grid */
+.skill-list{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.skill{
+    background:#e0f2fe;
+    padding:12px;
+    border-radius:8px;
+    text-align:center;
+}
+
+/* Project Cards */
+.project-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:#f9fafb;
+    padding:20px;
+    border-radius:10px;
+}
+
+/* Button */
+.btn{
+    display:inline-block;
+    margin-top:15px;
+    padding:12px 24px;
+    background:#3b82f6;
+    color:white;
+    text-decoration:none;
+    border-radius:18px;
+}
+
+/* Responsive */
+@media(max-width:768px){
+
+.container{
+grid-template-areas:
+"header"
+"hero"
+"about"
+"skills"
+"projects"
+"contact"
+"footer";
+
+grid-template-columns:1fr;
+}
+
+}
+
+.rounded-img {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+}
+
+.text_btn {
+    background-color: #574958;
+    color: #0b95f1;
+    padding: 5px 12px;
+    border-radius: 60px;
+    font-size: 24px;
+}
+
+/* About Banner */
+.about-banner{
+   background: linear-gradient(100deg, #a8e063, #56ab2f);
+    padding: 10px 20px;
+    text-align: center;
+    color: blue;
+	min-height: 150px;
+	height:20vh;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.banner-content{
+    max-width: 800px;
+    margin: auto;
+}
+
+.about-banner h1{
+    font-size: 38px;
+    margin-bottom: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.about-banner p{
+    font-size: 18px;
+    color: blue;
+    line-height: 1.4;
+	
+}
+.paraspace {
+    margin-bottom: 20px;
+    line-height: 1.7;
+}
+@media(max-width:700px){
+    .about-banner{
+        padding: 25px 15px;
+    }
+
+    .about-banner h1{
+        font-size: 12px;
+    }
+
+    .about-banner p{
+        font-size: 10px;
+    }
+}
+
+
+.philosophy {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 50px;
+    border-radius: 16px;
+    color: #ffffff;
+    max-width: 900px;
+    margin: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.philosophy h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 28px;
+    color: #38bdf8;
+    letter-spacing: 1px;
+}
+
+.philosophy-list {
+    list-style: none;
+    padding: 0;
+}
+
+.philosophy-list li {
+    background: rgba(255, 255, 255, 0.05);
+    margin: 12px 0;
+    padding: 15px 18px;
+    border-left: 4px solid #38bdf8;
+    border-radius: 8px;
+    line-height: 1.6;
+    transition: 0.3s ease;
+}
+
+.philosophy-list li:hover {
+    transform: translateX(8px);
+    background: rgba(56, 189, 248, 0.1);
+}
