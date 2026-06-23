@@ -1,0 +1,77 @@
+name: DAST Security Checking
+on:
+  workflow_call:
+
+jobs:
+
+ k8s-test:
+    name: DAST with OWASP ZAP and smoke test 
+    runs-on: ubuntu-latest
+  
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Create cluster
+        run: |
+          kind create cluster
+
+       # Build Docker image
+      - name: Build image
+        run: docker build -t portfolio:${{ github.sha }} .
+
+    # Load image into Kind
+      - name: Load image into Kind
+        run: kind load docker-image portfolio:${{ github.sha }} 
+
+      - name: Check Docker image size
+        run: |
+           SIZE=$(docker image inspect portfolio:${{ github.sha }} --format='{{.Size}}')
+           echo "Raw size: $SIZE bytes" 
+     
+      - name: Deploy app
+        run: |
+          kubectl create deployment demo \
+           --image=ghcr.io/${{ github.repository }}:${{ github.sha }}
+            #--image=portfolio:${{ github.sha }}
+          kubectl expose deployment demo \
+           --type=ClusterIP \
+           --port=8000 \
+           --target-port=8000
+
+      - name: Check deployment
+        run: |
+          kubectl wait --for=condition=Ready nodes --all --timeout=120s
+          kubectl rollout status deployment/demo --timeout=1200s
+          kubectl get all
+          kubectl get events --sort-by=.metadata.creationTimestamp
+          kubectl get deployments
+          kubectl get replicasets
+          kubectl get pods -A
+          kubectl get svc
+          kubectl describe deployment demo
+    
+      - name: Port forward 
+        run: |
+          kubectl port-forward svc/demo 8000:8000 &
+          sleep 15
+      - name: Verify app
+        run: |
+          curl http://localhost:8000 
+      - name: Run OWASP ZAP
+        run: |
+          docker run --network host \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
+          -t http://localhost:8000 -I      

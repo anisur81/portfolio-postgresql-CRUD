@@ -1,0 +1,62 @@
+name: SCA-Source Code Composition Analysis
+
+on:
+  workflow_call:
+
+jobs:
+  dependency-scan:
+    name: SCA with trivy-semgrep-pipaudit
+    runs-on: ubuntu-latest
+
+   # Job 4: software composition analysis (SCA) (trivy + semgrep + pipaudit) 
+    steps:
+     - name: Checkout code
+       uses: actions/checkout@v4
+
+    # Trivy for SCA
+     - name: Install Trivy
+       run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          TRIVY_VERSION="0.71.0"
+          wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+          
+     - name: Verify installation
+       run: trivy --version
+      
+     - name: Run Trivy Filesystem Scan
+       run: |
+          trivy fs . --severity HIGH,CRITICAL --exit-code 1
+
+    # Semgrep for SCA 
+     - name: Run Semgrep
+       uses: returntocorp/semgrep-action@v1
+       with:
+          config: p/owasp-top-ten
+
+     - name: Upload Semgrep report
+       uses: actions/upload-artifact@v4
+       with:
+          name: semgrep-report
+          path: semgrep-results.json
+   
+   # production-ready SCA job using pip-audit
+     - name: Install dependencies
+       run: |
+          pip install --upgrade pip
+          pip install pip-audit
+
+     - name: Run SCA Scan (pip-audit)
+       run: |
+          pip-audit -r requirements.txt -s osv || true
+          if [ $? -ne 0 ]; then
+           echo "High severity vulnerabilities found"
+           exit 1
+          fi
+
+
+
+
+        

@@ -1,0 +1,35 @@
+name: image Scan using artifact
+on:
+  workflow_call:
+     secrets:
+      github_sha:
+        required: true
+
+jobs:
+  image-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - run: |
+          docker load -i portfolio-image.tar
+
+      - name: Scan
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: image
+          image-ref: portfolio:${{ github.sha }}
+          format: sarif
+          output: trivy-image.sarif
+
+      - name: Upload Trivy Scan Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+           sarif_file: trivy-image.sarif 
+
+
+
+          

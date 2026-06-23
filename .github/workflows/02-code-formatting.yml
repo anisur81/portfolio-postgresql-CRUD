@@ -1,0 +1,57 @@
+name: Code Quality
+on:
+  workflow_call:
+   secrets:
+      SONAR_TOKEN:
+        required: true
+
+jobs:  
+ code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort
+    
+    - name: Install gunicorn dependencies
+      run: pip install gunicorn     
+
+    # Formatter - Auto-format Python code
+    - name: Run Black (Code Formatting)
+      run: black .
+   
+    # Import Formatter - Sort and organize imports
+    - name: Run isort (Import Sorting)
+      run: isort .
+
+ # SonarCloud Scan for code quality
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v2
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+          args: >
+            -Dsonar.projectKey=anisur81_portfolio
+            -Dsonar.organization=anisur81
+            -Dsonar.python.coverage.reportPaths=coverage.xml 
+
+
+
+
+
+
+
+
+
+
+      

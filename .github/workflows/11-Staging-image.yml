@@ -1,0 +1,19 @@
+name: Build Image for Staging
+on:
+  workflow_call:
+jobs:
+  build-staging:
+    name: Build Image for Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          docker build -t portfolio:${GITHUB_SHA} .
+          docker save portfolio:${GITHUB_SHA} -o portfolio-image.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: portfolio-image.tar

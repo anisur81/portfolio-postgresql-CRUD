@@ -1,0 +1,436 @@
+name: Django CI/CD Pipeline
+
+# Add required permissions to your workflow
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+  
+on:
+#  push:
+ #   branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+env:
+  PYTHON_VERSION: '3.12.3'
+  DJANGO_SETTINGS_MODULE: portfolio.settings
+  # PYTHON_FILES: tests.py test_*.py *_tests.py
+
+jobs:
+
+# 1. Secrets Scan (Gitleaks and Trufflehog)
+ 
+  secrets-scan:
+    name: Secrets Scan with gitleaks and trufflehog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+       # Gitleaks Scanning
+      - name: Run Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v1
+        env:
+          GITLEAKS_EXIT_CODE: 1
+
+       # Add SARIF upload to GitHub Security tab
+      - name: Upload Gitleaks SARIF
+        uses: github/codeql-action/init@v4
+        with:
+           languages: python
+      - name: sarif file auto upload    
+        uses: github/codeql-action/analyze@v4
+    
+        # TRUFFLEHOG Scanning
+        
+      - name: Run TruffleHog Scan
+        uses: trufflesecurity/trufflehog@v3.82.8
+        with:
+           path: ./
+           base: ${{ github.event.before }}
+           head: ${{ github.sha }}  
+
+  # Job 2: Code Quality (Formatter) and Linters (Static Analysis)
+  lint:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort pylint ruff
+    
+    - name: Install gunicorn dependencies
+      run: pip install gunicorn     
+
+    # Formatter - Auto-format Python code
+    - name: Run Black (Code Formatting)
+      run: black .
+   
+    # Import Formatter - Sort and organize imports
+    - name: Run isort (Import Sorting)
+      run: isort .
+
+    # Linter - Detect style and basic syntax issues
+    - name: Run Flake8 (Linting)
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    # Advanced Linter - Very strict code quality + design checks
+    - name: Run Pylint
+      run: pylint **/*.py --exit-zero
+
+     # Fast Linter or Formatter Replaces Flake8 + isort + many plugins
+    - name: Run Ruff (Lint + Import Check)
+      run: ruff check . --fix  
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest django pytest-django coverage     
+    
+     # Run tests + coverage
+    #- name: Run tests with coverage
+     # run: |
+     #     pytest --collect-only || exit 0
+    
+    - name: Run tests with coverage
+      run: |
+          coverage run manage.py test
+          coverage xml
+    
+      # SonarCloud Scan for code quality
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v2
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+          args: >
+            -Dsonar.projectKey=anisur81_portfolio
+            -Dsonar.organization=anisur81
+            -Dsonar.python.coverage.reportPaths=coverage.xml 
+    
+  
+# Job 3: Static application security testing (SAST) 
+  security:
+    name: Security Scanning SAST
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install safety bandit checkov django pytest-django coverage
+
+    # Safety Python dependency vulnerability scanner
+    - name: Check for security vulnerabilities
+      run: PYTHONWARNINGS="ignore" safety check -r requirements.txt --json > safety-report.json
+
+    - name: Upload Safety Reports
+      uses: actions/upload-artifact@v4
+      with:
+         name: safety-reports
+         path: |
+             safety-report.json 
+    
+    # Bandit with OWASP check specific for python
+    - name: Run Bandit security scan
+      run: bandit -r . -ll -f json -o bandit-report.json
+    - name: Upload bandit Reports
+      uses: actions/upload-artifact@v4
+      with:
+         name: bandit-reports
+         path: | 
+            bandit-report.json
+            
+    # Semgrep Enterprise SAST 
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: "p/security-audit"
+   # Codeql  initialize
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+          languages: python
+          queries: security-extended,security-and-quality   
+     # Codeql code analysis     
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+    - name: Run Checkov scan
+      run: |
+          checkov -d . --framework terraform,kubernetes,cloudformation \
+          --output cli --soft-fail
+
+    # Sonarqube SAST checking
+    
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@v2
+      env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          args: >
+            -Dsonar.organization=anisur81
+            -Dsonar.projectKey=anisur81_portfolio
+            -Dsonar.projectName=django-app
+            -Dsonar.sources=.
+            -Dsonar.python.version=3.11
+            -Dsonar.exclusions=**/migrations/**,**/venv/**,**/__pycache__/**
+
+    - name: Run Tests with Coverage for Sonarqube
+      run: |
+           coverage run manage.py test --verbosity=2
+           coverage xml
+    - name: Upload coverage Reports
+      uses: actions/upload-artifact@v4
+      with:
+         name: coverage-reports
+         path: | 
+            coverage.xml       
+
+    - name: Verify Coverage
+      run: ls -la coverage.xml
+    
+    #- name: Quality Gate Check (optional but recommended)
+    #  uses: sonarsource/sonarqube-quality-gate-action@v1  
+   #   env:
+    #      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # k8s staging environment 
+  k8s-test:
+    name: k8s staging environment readyness 
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Create cluster
+        run: |
+          kind create cluster
+
+       # Build Docker image
+      - name: Build image
+        run: docker build -t portfolio:${{ github.sha }} .
+
+    # Load image into Kind
+      - name: Load image into Kind
+        run: kind load docker-image portfolio:${{ github.sha }} 
+     
+     
+      - name: Deploy app
+        run: |
+          kubectl create deployment demo \
+           --image=ghcr.io/${{ github.repository }}:${{ github.sha }}
+            #--image=portfolio:${{ github.sha }}
+          kubectl expose deployment demo \
+           --type=ClusterIP \
+           --port=8000 \
+           --target-port=8000
+
+      - name: Check deployment
+        run: |
+          kubectl wait --for=condition=Ready nodes --all --timeout=120s
+          kubectl rollout status deployment/demo --timeout=900s
+          kubectl get all
+          kubectl get events --sort-by=.metadata.creationTimestamp
+          kubectl get deployments
+          kubectl get replicasets
+          kubectl get pods -A
+          kubectl get svc
+          kubectl describe deployment demo
+    
+      - name: Port forward 
+        run: |
+          kubectl port-forward svc/demo 8000:8000 &
+          sleep 15
+      - name: Verify app
+        run: |
+          curl http://localhost:8000 
+      - name: Run OWASP ZAP
+        run: |
+          docker run --network host \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
+          -t http://localhost:8000 -I        
+        
+# Job 4: software composition analysis (SCA) (trivy + semgrep + pipaudit)
+  sca:
+   name: SCA with trivy-semgrep
+   runs-on: ubuntu-latest
+   
+   steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Trivy for SCA
+    - name: Install Trivy
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          TRIVY_VERSION="0.71.0"
+          wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+          
+    - name: Verify installation
+      run: trivy --version
+      
+    - name: Run Trivy Filesystem Scan
+      run: |
+          trivy fs . --severity HIGH,CRITICAL --exit-code 1
+
+    # Semgrep for SCA 
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: p/owasp-top-ten
+
+    - name: Upload Semgrep report
+      uses: actions/upload-artifact@v4
+      with:
+        name: semgrep-report
+        path: semgrep-results.json
+   
+   # production-ready SCA job using pip-audit
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install pip-audit
+
+    - name: Run SCA Scan (pip-audit)
+      run: |
+        pip-audit -r requirements.txt -s osv || true
+        if [ $? -ne 0 ]; then
+          echo "High severity vulnerabilities found"
+          exit 1
+        fi
+
+# Job 5: Run Tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: [lint, security, secrets-scan, sca]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest django pytest-django pytest-cov
+    
+    - name: Run Tests with Coverage
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=html || true
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: htmlcov/      
+
+
+
+# Job 6: Build Docker Image and Push to GitHub Container Registry
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, security]
+
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    # Push only on main branch
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}   
+ 
+
+      - name: Scan Docker Image with Trivy
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+           scan-type: image
+           image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+           format: sarif
+           output: trivy-image.sarif
+
+      - name: Upload Trivy Scan Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+           sarif_file: trivy-image.sarif
+           
+
+
+
+
+

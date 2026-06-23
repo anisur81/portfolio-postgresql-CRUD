@@ -1,0 +1,48 @@
+name: Integration test with DB
+on:
+  workflow_call:
+jobs:
+
+ integration_tests:
+    name: Integration Tests with db
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U testuser"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-django psycopg2-binary
+
+      - name: Run Migrations
+        run: |
+          python manage.py migrate --noinput
+
+      - name: Run Integration Tests
+        run: |
+          pytest -m "integration" --disable-warnings --maxfail=1
