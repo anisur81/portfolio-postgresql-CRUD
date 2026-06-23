@@ -1,0 +1,88 @@
+name: Enterprise CI/CD Pipeline
+
+# Add required permissions to your workflow
+permissions:
+  contents: read
+  actions: read
+  packages: write
+  security-events: write
+  
+on:
+  push:
+   branches: [ main, develop ]
+
+  pull_request:
+    branches: [ main, develop ]
+env:
+  PYTHON_VERSION: '3.12.3'
+  DJANGO_SETTINGS_MODULE: portfolio.settings
+  
+jobs:
+
+  #secret-scan:
+    #uses: ./.github/workflows/01-secret-scan.yml
+
+  #code-formating:
+   # needs: secret-scan
+    #uses: ./.github/workflows/02-code-formatting.yml  
+    #secrets:
+    #  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  #linting:
+   # needs: secret-scan
+    #uses: ./.github/workflows/03-code-linting.yml
+    #secrets:
+     # SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #SCA:
+   # needs: secret-scan 
+    #uses: ./.github/workflows/04-SCA-dependency-scan.yml   
+
+  SCA:
+   # needs: secret-scan 
+    uses: ./.github/workflows/04-SCA-snyk-scan.yml     
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+     
+  #SAST:
+   # needs: SCA
+    #uses: ./.github/workflows/05-SAST-security.yml
+    #secrets:
+     # SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  #build-unit:
+    #needs: SAST
+    #uses: ./.github/workflows/07-build-unit.yml 
+
+  #Build-image: 
+    #uses: ./.github/workflows/09-docker-build-SBOM.yml
+
+  #Scan-image: 
+   # needs: Build-image
+    #uses: ./.github/workflows/10-image-scan.yml
+
+   #Staging-image: 
+     #needs: Build-image
+     #uses: ./.github/workflows/11-Staging-image.yml
+    
+   #Trivy-scan-artifact: 
+     #needs: Staging-image
+     #uses: ./.github/workflows/12-trivy-with-artifact.yml
+     #secrets:
+     # github_sha: ${{ secrets.github_sha }}
+   #DAST-Test: 
+     #needs: Build-image
+     #uses: ./.github/workflows/12-DAST-and-Smoke.yml  
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
